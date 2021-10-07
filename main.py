@@ -1,5 +1,21 @@
 import random
 
+
+def get_maxes():
+    max_int_worth_cont = 0
+    max_int_worth_target = 0
+    for i in range(0, 42):
+        for c in range(0, len(continents)):
+            if i in continents[c] and len(continents[c]) > max_int_worth_cont:
+                max_int_worth_cont = len(continents[c])
+        for t in range(0, len(targets)):
+            if i in targets[t] and len(targets[t]) > max_int_worth_target:
+                max_int_worth_target = len(targets[t])
+
+    # print("cont:" + str(max_int_worth_cont) + "\ttarget:" + str(max_int_worth_target))
+    return max_int_worth_cont, max_int_worth_target
+
+
 targets = [
     [1, 32],
     [0, 2, 5, 6],
@@ -44,6 +60,8 @@ targets = [
     [38, 39, 41],
     [40, 12]
 ]
+
+# Refactor
 
 continents = [
     [0, 1, 2, 3, 4, 5, 6, 7],
@@ -106,34 +124,45 @@ class RiskGame:
 
         self.countries = []
         for i in range(0, 42):
-            owner = random.randint(0, self.amount_players)
-            amount_soldiers = random.randint(0, 10)
+            owner = -1
+            amount_soldiers = 0
 
-            self.countries.insert(i, Country(i, 1, amount_soldiers))
+            """if i == 38 or i == 39 or i == 40:
+                owner = 1
+            elif i == 41:
+                owner = -1
+            """
 
-        self.country_worth = self.get_worth(2)
+            self.countries.insert(i, Country(i, owner, amount_soldiers))
+
+    @staticmethod
+    def my_sort(e):
+        return e["worth"]
 
     def print_board(self):
         for i in range(0, 42):
+            self.country_worth = self.get_worth(self.countries[i].owner)
             print(self.countries[i])
-            print("Id:" + str(i) + " continent worth is  \t" + str(self.country_worth[i][0]))
-            print("Id:" + str(i) + " target worth is  \t\t" + str(self.country_worth[i][1]))
-            print("Id:" + str(i) + " intrinsic worth is \t" + str(self.country_worth[i][2]))
-            total_worth = (self.country_worth[i][0] + self.country_worth[i][1] + self.country_worth[i][2]) / 3
+            print("Id:" + str(i) + " continent worth is  \t" + str(self.country_worth[i][1]))
+            print("Id:" + str(i) + " defence worth is  \t\t" + str(self.country_worth[i][2]))
+            print("Id:" + str(i) + " intrinsic worth is \t" + str(self.country_worth[i][0]))
+            total_worth = (self.country_worth[i][0] + self.country_worth[i][1] + self.country_worth[i][2])
             print("Id:" + str(i) + " total worth is \t\t" + str(total_worth) + "\n")
 
     def get_worth(self, player_id):
+        max_int_worth_cont, max_int_worth_target = get_maxes()
+
         country_worth = list()
-        for i in range(0, len(targets)):
+        for country_id in range(0, len(targets)):
             target_own_count = 0
-            for j in range(0, len(targets[i])):
-                if self.countries[targets[i][j]].owner == player_id:
+            for j in range(0, len(targets[country_id])):
+                if self.countries[targets[country_id][j]].owner == player_id:
                     target_own_count += 1
-            target_worth = target_own_count / len(targets[i]) * 100
+            defence_worth = target_own_count / len(targets[country_id]) * 100
 
             continent_worth = 0
             for j in range(0, len(continents)):
-                if i in continents[j]:
+                if country_id in continents[j]:
                     continent_worth += continent_bonus[j]
 
                     continent_own_count = 0
@@ -143,38 +172,70 @@ class RiskGame:
                             continent_own_count += 1
                     continent_worth = continent_own_count / continent_len * 100
 
+                    if continent_own_count == continent_len - 1 and self.countries[country_id].owner == -1:
+                        continent_worth += 250
+                        # print("bonus worth -1")
+                    elif continent_own_count == continent_len - 2 and self.countries[country_id].owner == -1:
+                        continent_worth += 100
+                        #  print("bonus worth -2")
+
             # calculate intrinsic worth
             intrinsic_worth = 0
             for j in range(0, len(continents)):
-                if i in continents[j]:
-                    intrinsic_worth = len(continents[j]) / continent_bonus[j]
-                    intrinsic_worth += len(targets[i]) / 2
-                    intrinsic_worth = intrinsic_worth / 6.333333333333334 * 100
+                if country_id in continents[j]:
+                    intrinsic_worth_continents = len(continents[j]) / 8 * 100
+                    intrinsic_worth_targets = (max_int_worth_target - len(targets[country_id])) / 8 * 100
+                    intrinsic_worth = (intrinsic_worth_continents + intrinsic_worth_targets) / 2
 
-            country_worth.append([intrinsic_worth, continent_worth, target_worth])
+            country_worth.append([intrinsic_worth, continent_worth, defence_worth])
         return country_worth
 
-    def pick_countries(self):
-        countries_picked = list()
+    def pick_countries(self, player_id):
+        # Adjust for non picked counries
 
-        while len(countries_picked) != 42:
-            max_value = 0
-            for i in range(0, self.amount_players):
-                country_worth = self.get_worth(i)
-                for j in range(0, 42):
-                    if country_worth[j][0] > max_value and j not in countries_picked:
-                        max_value = country_worth[j][0]
+        total_worth_all_countries = 0
+        countries_sorted = list()
+        for l in range(0, 42):
+            total_worth = (self.country_worth[l][0] + self.country_worth[l][1] + self.country_worth[l][2])
+            countries_sorted.append({"id": l, "owner": self.countries[l].owner, "worth": total_worth});
+            # print("Id:" + str(i) + " total worth is \t\t" + str(total_worth) + "\n")
 
-            possible_picks = list()
-            for i in range(0, 42):
-                if country_worth[i][0] == max_value and i not in countries_picked:
-                    print("picked: " + str(i))
-                    possible_picks.append(i)
-                    countries_picked.append(i)
+        total_worth_top_10_countries = 0
+        countries_sorted.sort(key=self.my_sort, reverse=True)
+        for l in range(0, 10):
+            if countries_sorted[l]["owner"] == -1:
+                total_worth_top_10_countries += countries_sorted[l]['worth']
 
-            print(possible_picks)
+        # if no complete continent
+        # If no block continent other player
+        # print(total_worth_top_10_countries)
+        result = random.randint(0, int(total_worth_top_10_countries / 2))
+        for l in range(0, 42):
+            if countries_sorted[l]["owner"] == -1:
+                result -= countries_sorted[l]["worth"]
+                # print(str(l) + " with id " + str(countries_sorted[l]["id"]) + " result : " + str(result))
+
+            if 1 > result:
+                if self.countries[countries_sorted[l]["id"]].owner == -1:
+                    print("Pick: " + str(countries_sorted[l]["id"]))
+                    return countries_sorted[l]["id"]
+
+    def pick_move(self):
+        pass
+
 
 if __name__ == "__main__":
+    result_list = list()
     game = RiskGame()
+    for i in range(0, 42):
+        player_id = i % game.amount_players  # 3 is amount of players
+        game.country_worth = game.get_worth(player_id)
+        result = game.pick_countries(player_id)
+        game.countries[result].owner = player_id
+        print(game.countries[result].owner)
+        result_list.append(result)
+
     game.print_board()
-    game.pick_countries()
+
+    for entry_id in range(0, 42):
+        print(str(entry_id) + " - " + str(result_list.count(entry_id)))
