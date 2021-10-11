@@ -1,0 +1,5 @@
+print("Attack: ")
+print((10 / 99 * 100) * 0.42)
+print()
+print("Defence: ")
+print((10 / 99 * 100) * 0.58)
