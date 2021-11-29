@@ -8,7 +8,7 @@ from risk_game import RiskGame
 
 if __name__ == "__main__":
     result_list = list()
-    game = RiskGame(8)
+    game = RiskGame(4)
 
     # pick countries
     for i in range(0, 42):
@@ -26,12 +26,15 @@ if __name__ == "__main__":
         game.countries[result].amount_soldiers += 1
         game.country_worth[result] = game.get_worth(result, player_id)
 
+    # game.print_board()
+
     # make steppable by player/turn
     turn_count = 0
     all_country_one_owner = False
     did_move_last_turn = []
     for player_id in range(0, game.amount_players):
         did_move_last_turn.insert(player_id, False)
+
     while not all_country_one_owner:
         turn_count += 1
         print("TURN: " + str(turn_count))
@@ -49,6 +52,7 @@ if __name__ == "__main__":
                     reinforcements -= 1
 
                 amount_moves = game.get_amount_moves(player_id)
+                amount_moves = max(amount_moves, 5)
                 for move_count in range(0, amount_moves):
                     print("TURN: " + str(turn_count) + "\t\tPLAYER: " + str(player_id) + "\t\tMOVE: " + str(move_count))
                     possible_moves = []
@@ -71,10 +75,10 @@ if __name__ == "__main__":
                         game.do_move(source_id, target_id, game.countries[source_id].amount_soldiers - 2)
                         did_move_last_turn[player_id] = True
 
-            for player_id in range(0, game.amount_players):
-                if len(game.get_owned_country_ids(player_id)) == 42:
-                    print("PLAYER " + str(player_id) + " WON !")
-                    all_country_one_owner = True
+        for player_id in range(0, game.amount_players):
+            if len(game.get_owned_country_ids(player_id)) == 42:
+                print("PLAYER " + str(player_id) + " WON !")
+                all_country_one_owner = True
 
         string = ""
         for player_id in range(0, game.amount_players):
@@ -84,4 +88,4 @@ if __name__ == "__main__":
     # game.print_board()
 
     # for entry_id in range(0, 42):
-    # print(str(entry_id) + " - " + str(result_list.count(entry_id)))F
+    # print(str(entry_id) + " - " + str(result_list.count(entry_id)))

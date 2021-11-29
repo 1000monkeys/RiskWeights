@@ -41,7 +41,7 @@ class RiskGame:
                 if i in targets[t] and len(targets[t]) > max_int_worth_target:
                     max_int_worth_target = len(targets[t])
 
-        # print("cont:" + str(max_int_worth_cont) + "\ttarget:" + str(max_int_worth_target))
+        print("cont:" + str(max_int_worth_cont) + "\ttarget:" + str(max_int_worth_target))
         return max_int_worth_cont, max_int_worth_target
 
     @staticmethod
